@@ -4,11 +4,11 @@ import { setupCounter } from './counter.ts'
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
     <p id="time" class="timer"></p>
-    <div id="list"></div>
+    <div id="timelist"></div>
   </div>
 `
 
 setupCounter(
   document.querySelector<HTMLParagraphElement>('#time')!,
-  document.querySelector<HTMLDivElement>('#list')!,
+  document.querySelector<HTMLDivElement>('#timelist')!,
 )

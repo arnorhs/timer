@@ -1,6 +1,6 @@
 import { spaceListener } from './spacelistener'
 
-function formatTime(num: number) {
+function renderTime(num: number) {
   const minutes = Math.floor(num / 60000)
   const seconds = Math.floor((num % 60000) / 1000)
   const milliseconds = Math.floor((num % 1000) / 10)
@@ -15,25 +15,23 @@ export function setupCounter(timeEl: HTMLParagraphElement, listEl: HTMLDivElemen
   const timeList: number[][] = []
 
   function updateTime() {
-    if (!status()) {
+    if (status()) {
+      timeEl.style.background = 'rgba(100,255,140, 0.1)'
+    } else {
+      timeEl.style.background = 'transparent'
+
       timeEl.textContent = startTime
-        ? `${formatTime(Date.now() - startTime)}`
+        ? `${renderTime(Date.now() - startTime)}`
         : 'Press space to start'
     }
     requestAnimationFrame(updateTime)
   }
 
   function updateList() {
-    const strs = times.map((time) => `<div>${formatTime(time)}</div>`).reverse()
-    if (strs.length > 1) {
-      strs.push(
-        `<div style="border-top: 1px solid black;"><strong>${formatTime(
-          times.reduce((a, b) => a + b, 0),
-        )}</strong></div>`,
-      )
-    }
+    let str = timeList.map((times) => renderTimeList(times)).join('\n')
+    str += renderTimeList(times)
 
-    listEl.innerHTML = strs.join('')
+    listEl.innerHTML = `<div class="timelist__wrapper">${str}</div>`
   }
 
   const { status } = spaceListener({
@@ -43,25 +41,39 @@ export function setupCounter(timeEl: HTMLParagraphElement, listEl: HTMLDivElemen
       const now = Date.now()
 
       if (lastTime !== undefined) {
-        // so you can end with a down-space
-        times.push((duration > 1000 ? now - duration : now) - lastTime)
-        updateList()
+        times.push(now - duration - lastTime)
+
+        if (duration < 1000) {
+          // checkpoint
+          lastTime = now - duration
+        } else {
+          // end of run
+          timeList.push(times)
+          times = []
+          lastTime = undefined
+          startTime = undefined
+        }
+      } else {
+        // start of run
+        lastTime = now
+        startTime = now
       }
 
-      if (duration > 1000 && lastTime !== undefined) {
-        timeList.push(times)
-        times = []
-        lastTime = undefined
-        startTime = undefined
-        updateList()
-      } else {
-        lastTime = now
-        if (times.length === 0) {
-          startTime = now
-        }
-      }
+      updateList()
     },
   })
 
   updateTime()
+}
+
+function renderTimeList(times: number[]) {
+  if (times.length < 1) {
+    return ''
+  }
+  const strs = times.map((time) => `<div>${renderTime(time)}</div>`)
+  if (strs.length > 0) {
+    strs.push(`<div class="timelist__total">${renderTime(times.reduce((a, b) => a + b, 0))}</div>`)
+  }
+
+  return `<div class="timelist">${strs.join('\n')}</div>`
 }
